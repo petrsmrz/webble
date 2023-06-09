@@ -3,14 +3,15 @@ import { useRef, useState } from "react";
 
 function App() {
   const [decodedString, setDecodedString] = useState("");
+
   const inputRef = useRef(null);
   const QLR_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-  const QLR_SUB_CHAR2 = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"; // write
-  const QLR_SUB_CHAR1 = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"; // notify
+  const QLR_SUB_WRITE = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"; // write
+  const QLR_SUB_NOFIT = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"; // notify
   const SY_SERVICE = "c1b25000-caaf-6d0e-4c33-7dae30052840";
-  //const SY_SUB_INDIC = "c1b25010-caaf-6d0e-4c33-7dae30052840";
-  //const SY_SUB_NOTIF = "c1b25013-caaf-6d0e-4c33-7dae30052840";
-  //const SY_SUB_CMD = "c1b25012-caaf-6d0e-4c33-7dae30052840";
+  const SY_SUB_INDIC = "c1b25010-caaf-6d0e-4c33-7dae30052840";
+  const SY_SUB_NOTIF = "c1b25013-caaf-6d0e-4c33-7dae30052840";
+  const SY_SUB_CMD = "c1b25012-caaf-6d0e-4c33-7dae30052840";
 
   const bleConnectOptions = {
     filters: [
@@ -33,13 +34,31 @@ function App() {
       const server = await device.gatt.connect();
       console.log("gatt server connected", server);
 
+      // choose setvice as per manufacturer config
+      const useService = device.name.startsWith("SY")
+        ? SY_SERVICE
+        : QLR_SERVICE;
+
+      const useNotifChar = device.name.startsWith("SY")
+        ? SY_SUB_NOTIF
+        : QLR_SUB_NOFIT;
+
+      const useIndChar = device.name.startsWith("SY")
+        ? SY_SUB_INDIC
+        : QLR_SUB_NOFIT;
+
+      const useCmdChar = device.name.startsWith("SY")
+        ? SY_SUB_CMD
+        : QLR_SUB_WRITE;
+
       //read ble services witihin the device
       console.log("connecting services ...");
-      const service = await server.getPrimaryService(QLR_SERVICE);
+      const service = await server.getPrimaryService(useService);
       console.log("services", service);
+
       // read ble characteristic within the device
       const notifCharacteristics = await service.getCharacteristic(
-        QLR_SUB_CHAR1
+        useNotifChar
       );
       console.log(
         "Notification characteristic " + JSON.stringify(notifCharacteristics)
@@ -51,9 +70,7 @@ function App() {
         handleInd
       );
 
-      const indicCharacteristic = await service.getCharacteristic(
-        QLR_SUB_CHAR1
-      );
+      const indicCharacteristic = await service.getCharacteristic(useIndChar);
       console.log(
         "Indication characteristic " + JSON.stringify(indicCharacteristic)
       );
@@ -63,7 +80,7 @@ function App() {
         "characteristicvaluechanged",
         handleInd
       );
-      window.cmdCharacteristic = await service.getCharacteristic(QLR_SUB_CHAR2);
+      window.cmdCharacteristic = await service.getCharacteristic(useCmdChar);
       console.log("CMD characteristic", window.cmdCharacteristic);
       window.cmdCharacteristic.addEventListener("submit", writeCommand, false);
       /*  let enc = new TextEncoder("utf-8");
