@@ -110,12 +110,39 @@ function App() {
   }
   return (
     <div className="App">
-      <button onClick={connectDevice}>add device</button>
-      <h1>device</h1>
-      <div> Value from an instrument = {decodedString}</div>
+      <button
+        style={{ padding: "10px", width: "200px", margin: "20px" }}
+        onClick={connectDevice}
+      >
+        <h1 style={{ padding: "0px", margin: "5px" }}>add device</h1>
+      </button>
 
-      <input ref={inputRef} type="text" />
-      <button onClick={handleClick}>Submit</button>
+      <div style={{ padding: "50px" }}>
+        <h1>
+          Value from an instrument
+          <br />
+          <p style={{ color: "green" }}>{decodedString}</p>
+        </h1>
+      </div>
+      <div style={{ padding: "0px" }}>
+        <input
+          style={{
+            padding: "10px",
+            width: "200px",
+            marginBottom: "10px",
+            fontSize: "25px",
+          }}
+          ref={inputRef}
+          type="text"
+        />
+        <br />
+        <button
+          style={{ padding: "10px", width: "200px", margin: "20px" }}
+          onClick={handleClick}
+        >
+          <h1 style={{ padding: "0px", margin: "5px" }}>Submit</h1>
+        </button>
+      </div>
     </div>
   );
 }
