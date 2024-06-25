@@ -6,37 +6,53 @@ function App() {
   //const [number, setNumber] = useState(0);
   const [syDecodedString, setSyDecodedString] = useState("");
   const [dtDecodedString, setDtDecodedString] = useState("");
+  const [mtDecodedString, setMtDecodedString] = useState("");
 
   const inputRef = useRef(null);
+  // QLR service and characteristics
   const QLR_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
   const QLR_SUB_WRITE = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"; // write
   const QLR_SUB_NOFIT = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"; // notify
+  // Sylvac service and characteristics
   const SY_SERVICE = "c1b25000-caaf-6d0e-4c33-7dae30052840";
   const SY_SUB_INDIC = "c1b25010-caaf-6d0e-4c33-7dae30052840";
   const SY_SUB_NOTIF = "c1b25013-caaf-6d0e-4c33-7dae30052840";
   const SY_SUB_CMD = "c1b25012-caaf-6d0e-4c33-7dae30052840";
+  
+  // Mitutoyo service and characteristics
+  const MT_SERVICE = "7eafd361-f150-4785-b307-47d34ed52c3c";
+  const MT_SUB_CHAR = "7eafd361-f151-4785-b307-47d34ed52c3c";
+  const MT_TRI_CHAR = "7eafd361-f155-4785-b307-47d34ed52c3c";
 
   // Werka new indicator BLE5
   const WERKA_SERVICE = "00035b03-58e6-07dd-021a-08123a000300";
   const WERKA_SUB_WRITE = "00035b03-58e6-07dd-021a-08123a0003ff"; // read write
   const WERKA_SUB_INDIC = "00035b03-58e6-07dd-021a-08123a000301"; // read write indicate
 
+  const extractCharacters = (name, startIndex, endIndex) => {
+    return name.substring(startIndex, endIndex);
+  };
+  
   const bleConnectOptions = {
     filters: [
       { services: [QLR_SERVICE] },
       { services: [SY_SERVICE] },
       { services: [WERKA_SERVICE] },
-      /* { name: "014333573" },
-      { name: "UWAVE" },*/
+      { services: [MT_SERVICE] },
+      { name: extractCharacters( "014333038",0,4) },
+      { name: "UWAVE" },
       { namePrefix: "SY" },
     ],
   };
+ console.log("BLE Connect Options", bleConnectOptions);
 
   const connectDevice = async () => {
     try {
       //show drop down list with devices to connect
       const device = await navigator.bluetooth.requestDevice(bleConnectOptions);
       console.log("device", device);
+      console.log("device name", device.name);
+      const deviceName = device.name;
 
       //connect gatt server within the device
       console.log("connceting gatt server");
@@ -48,12 +64,16 @@ function App() {
         ? SY_SERVICE
         : device.name.startsWith("D")
         ? WERKA_SERVICE
+        :device.name.startsWith(deviceName)
+        ? MT_SERVICE
         : QLR_SERVICE;
 
       const useNotifChar = device.name.startsWith("SY")
         ? SY_SUB_NOTIF
         : device.name.startsWith("D")
         ? WERKA_SUB_INDIC
+        :device.name.startsWith(deviceName)
+        ? MT_SUB_CHAR
         : QLR_SUB_NOFIT;
       console.log("Selected Notification Char =", useNotifChar);
 
@@ -61,6 +81,8 @@ function App() {
         ? SY_SUB_INDIC
         : device.name.startsWith("D")
         ? WERKA_SUB_INDIC
+        :device.name.startsWith(deviceName)
+        ? MT_SUB_CHAR
         : QLR_SUB_NOFIT;
       console.log("Selected Indication Char =", useIndChar);
 
@@ -68,6 +90,8 @@ function App() {
         ? SY_SUB_CMD
         : device.name.startsWith("D")
         ? WERKA_SUB_WRITE
+        :device.name.startsWith(deviceName)
+        ? MT_TRI_CHAR
         : QLR_SUB_WRITE;
 
       //read ble services witihin the device
@@ -109,17 +133,31 @@ function App() {
       function handleInd(event) {
         let value = event.target.value;
         console.log("Value =", value);
-        if (device.name.startsWith("SY") || !device.name.startsWith("D")) {
-          const syDecoder = new TextDecoder("utf-8");
+        if (device.name.startsWith("SY") || device.name.startsWith("Q")) {
+          const syDecoder = new TextDecoder("utf-8"); // Sylvac decoder
           const syDecodedValue = syDecoder.decode(value);
           setSyDecodedString(syDecodedValue);
           console.log("Read SY value", syDecodedValue);
+        } else if (device.name.startsWith(deviceName)) {
+          const mtDecodedValue = mtDecoder(value);
+          setMtDecodedString(mtDecodedValue);
+          console.log("Read MT value", mtDecodedValue);
         } else {
-          const dtDecoddedValue = dtDecoder(value);
-          setDtDecodedString(dtDecoddedValue);
-          console.log("Read DT value", dtDecoddedValue);
+          const dtDecodedValue = dtDecoder(value);
+          setDtDecodedString(dtDecodedValue);
+          console.log("Read DT value", dtDecodedValue);
         }
       }
+      // Mitutoyo decoder
+      function mtDecoder(val) {
+        console.log("mtDecoder echo Read value ", val);
+        const dataView = new DataView(val.buffer);
+        const uwaveVal =
+          dataView.getInt32(3, true) / 10 ** ((dataView.getUint8(2) << 8) >> 8);
+        const mtDecodedValue = uwaveVal.toString().trim();
+        return mtDecodedValue;
+      }
+      // Werka decoder
       function dtDecoder(val) {
         console.log("dtDecoder val", val);
 
@@ -202,8 +240,9 @@ function App() {
         <h1>
           Value from device
           <br />
-          <p style={{ color: "green" }}>{syDecodedString}</p>
+          <p style={{ color: "green" }}>{parseFloat(syDecodedString).toFixed(4)}</p>
           <p style={{ color: "green" }}>{dtDecodedString}</p>
+          <p style={{ color: "green" }}>{mtDecodedString}</p>
         </h1>
       </div>
       <div style={{ padding: "0px" }}>
@@ -223,7 +262,7 @@ function App() {
             padding: "10px",
             width: "200px",
             margin: "20px",
-            visibility: "hidden",
+            
           }}
           onClick={handleClick}
         >
