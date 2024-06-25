@@ -3,8 +3,7 @@ import React from "react";
 import { useRef, useState } from "react";
 
 function App() {
-  const [syDecodedString, setSyDecodedString] = useState("");
-  const [dtDecodedString, setDtDecodedString] = useState("");
+  const [number, setNumber] = useState(0);
 
   const inputRef = useRef(null);
   const QLR_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
@@ -169,6 +168,13 @@ function App() {
       console.error("error", err);
     }
   };
+  function handleInd(event) {
+    let value = event.target.value;
+    const decoder = new TextDecoder("utf-8");
+    const decodedValue = decoder.decode(value);
+    setDecodedString(decodedValue);
+    console.log("Read value", decodedValue);
+  }
   const handleClick = () => {
     const value = inputRef.current.value;
     console.log("handleClick", value);
@@ -193,15 +199,14 @@ function App() {
         <h1>
           Value from device
           <br />
-          <p style={{ color: "green" }}>{dtDecodedString}</p>
-          <p style={{ color: "green" }}>{syDecodedString}</p>
+          <p style={{ color: "green" }}>{decodedString}</p>
         </h1>
       </div>
       <div style={{ padding: "0px" }}>
         <input
           style={{
             padding: "10px",
-            width: "200px",
+            width: "400px",
             marginBottom: "10px",
             fontSize: "25px",
             visibility: "hidden",
