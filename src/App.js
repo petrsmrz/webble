@@ -32,6 +32,20 @@ function App() {
   const extractCharacters = (name, startIndex, endIndex) => {
     return name.substring(startIndex, endIndex);
   };
+  function formatToOriginalDecimals(inputString) {
+    // Parse the input string as a float
+    const parsedNumber = parseFloat(inputString);
+  
+    // Find the number of decimal places in the input string
+    const decimalIndex = inputString.indexOf('.');
+    const decimalPlaces = decimalIndex !== -1 ? inputString.length - decimalIndex - 1 : 0;
+  
+    // Format the parsed number to the original number of decimal places
+    const formattedNumber = parsedNumber.toFixed(decimalPlaces);
+  
+    // Remove trailing zeros by parsing it again as a float and then converting it to a string
+    return parseFloat(formattedNumber).toString();
+  }
   
   const bleConnectOptions = {
     filters: [
@@ -240,7 +254,7 @@ function App() {
         <h1>
           Value from device
           <br />
-          <p style={{ color: "green" }}>{parseFloat(syDecodedString).toFixed(4)}</p>
+          <p style={{ color: "green" }}>{formatToOriginalDecimals(syDecodedString)}</p>
           <p style={{ color: "green" }}>{dtDecodedString}</p>
           <p style={{ color: "green" }}>{mtDecodedString}</p>
         </h1>
