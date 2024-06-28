@@ -5,6 +5,9 @@ function App() {
   const [syDecodedString, setSyDecodedString] = useState("");
   const [dtDecodedString, setDtDecodedString] = useState("");
   const [mtDecodedString, setMtDecodedString] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [isBlinking, setIsBlinking] = useState(false);
+  
 
   const inputRef = useRef(null);
 
@@ -31,21 +34,34 @@ function App() {
       write: "00035b03-58e6-07dd-021a-08123a0003ff",
       indic: "00035b03-58e6-07dd-021a-08123a000301",
     },
+    WERKACAL: {
+      service: "0783b03e-8535-b5a0-7140-a304d2495cb7",
+      notify: "0783b03e-8535-b5a0-7140-a304d2495cb8",
+      indic: "0783b03e-8535-b5a0-7140-a304d2495cba",
+    },
   };
   function formatToOriginalDecimals(inputString) {
-    // Parse the input string as a float
-    const parsedNumber = parseFloat(inputString);
 
-    // Find the number of decimal places in the input string
-    const decimalIndex = inputString.indexOf(".");
-    const decimalPlaces =
-      decimalIndex !== -1 ? inputString.length - decimalIndex - 1 : 0;
+    if (isNaN(inputString)) {
+      return 0;
+    }
+  
+    
 
-    // Format the parsed number to the original number of decimal places
-    const formattedNumber = parsedNumber.toFixed(decimalPlaces);
-
-    // Remove trailing zeros by parsing it again as a float and then converting it to a string
-    return parseFloat(formattedNumber).toString();
+      // Parse the input string as a float
+      const parsedNumber = parseFloat(inputString);
+  
+      // Find the number of decimal places in the input string
+      const decimalIndex = inputString.indexOf(".");
+      const decimalPlaces =
+        decimalIndex !== -1 ? inputString.length - decimalIndex - 1 : 0;
+  
+      // Format the parsed number to the original number of decimal places
+      const formattedNumber = parsedNumber.toFixed(decimalPlaces);
+  
+      // Remove trailing zeros by parsing it again as a float and then converting it to a string
+      return parseFloat(formattedNumber).toString();
+      
   }
 
   const bleConnectOptions = {
@@ -54,7 +70,9 @@ function App() {
       { services: [SERVICES.SY.service] },
       { services: [SERVICES.WERKA.service] },
       { services: [SERVICES.MT.service] },
+      { services: [SERVICES.WERKACAL.service] },
       { namePrefix: "SY" },
+      { namePrefix: "GR" },
     ],
   };
 
@@ -117,12 +135,12 @@ function App() {
         let value = event.target.value;
         console.log("Value =", value);
 
-        if (characteristics === SERVICES.SY) {
+        if (characteristics === SERVICES.SY || SERVICES.WERKACAL) {
           const syDecoder = new TextDecoder("utf-8");
           const syDecodedValue = syDecoder.decode(value);
           setSyDecodedString(syDecodedValue);
           console.log("Read SY value", syDecodedValue);
-        } else if (characteristics === SERVICES.MT) {
+        } else if (characteristics === SERVICES.MT ) {
           const mtDecodedValue = mtDecoder(value);
           setMtDecodedString(mtDecodedValue);
           console.log("Read MT value", mtDecodedValue);
@@ -189,11 +207,7 @@ function App() {
     console.log("handleClick", value);
     writeCommand(value);
   };
-  const handleClickCmd = () => {
-    const value = "OUT1";
-    console.log("handleClick", value);
-    writeCommand(value);
-  };
+
 
   const enc = new TextEncoder("utf-8");
 
@@ -201,6 +215,33 @@ function App() {
     console.log("Command received", enc.encode(cmd + "\r"));
     window.cmdCharacteristic.writeValue(enc.encode(cmd + "\r"));
   }
+  function toggleStream() {
+    if (isStreaming) {
+      window.cmdCharacteristic.writeValue(enc.encode("OUT0\r"));
+    } else {
+      window.cmdCharacteristic.writeValue(enc.encode("OUT1\r"));
+    }
+    setIsStreaming(!isStreaming);
+  }
+  function toggleBlink() {
+    if (isBlinking) {
+      window.cmdCharacteristic.writeValue(enc.encode( "BLI0\r"));
+    } else {
+      window.cmdCharacteristic.writeValue(enc.encode("BLI1\r"));
+    }
+    setIsBlinking(!isBlinking);
+  }
+  function zeroSet() {
+   
+      window.cmdCharacteristic.writeValue(enc.encode( "SET\r"));
+  
+
+    
+  
+    
+    }
+ 
+  
 
   return (
     <div className="App">
@@ -222,6 +263,7 @@ function App() {
           <p style={{ color: "green" }}>{mtDecodedString}</p>
         </h1>
       </div>
+     
       <div style={{ padding: "0px" }}>
         <input
           style={{
@@ -233,7 +275,14 @@ function App() {
           ref={inputRef}
           type="text"
         />
-        <br />
+        <div>
+
+
+         <button  style={ { color: 'black',background: 'orange', padding: '10px', margin: '10px', width:  '100px' }} onClick={toggleStream}>{isStreaming ? 'stream off' : 'stream on'}</button>
+         <button  style={ { color: 'black',background: 'orange', padding: '10px',  margin: '10px', width:  '100px'}} onClick={toggleBlink}>{isBlinking ? 'blink off' : 'blink on'}</button>
+         <button  style={ { color: 'black',background: 'orange', padding: '10px',  margin: '10px', width:  '100px'}} onClick={zeroSet}>Set Zero</button>
+        </div>
+       
         <button
           style={{
             padding: "10px",
@@ -244,7 +293,7 @@ function App() {
         >
           <h1 style={{ padding: "0px", margin: "5px" }}>Submit</h1>
         </button>
-        <button onClick={handleClickCmd}>Stream</button>
+      
       </div>
     </div>
   );
