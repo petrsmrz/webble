@@ -38,7 +38,13 @@ function App() {
       service: "0783b03e-8535-b5a0-7140-a304d2495cb7",
       notify: "0783b03e-8535-b5a0-7140-a304d2495cb8",
       indic: "0783b03e-8535-b5a0-7140-a304d2495cba",
-    },
+    }, 
+    // advertising name: "DTW050" 
+    HCTRQ: {
+      service: "74937fe5-439c-472f-9696-dce392dac7e9",
+      notify: "fb79a5af-4e73-44c5-afc1-84032ca4ecae",
+      write: "d40d70b1-0c95-43b1-9761-18e72d6a66e5",
+    }
   };
   function formatToOriginalDecimals(inputString) {
 
@@ -71,8 +77,11 @@ function App() {
       { services: [SERVICES.WERKA.service] },
       { services: [SERVICES.MT.service] },
       { services: [SERVICES.WERKACAL.service] },
+      { services: [SERVICES.HCTRQ.service] },
       { namePrefix: "SY" },
       { namePrefix: "GR" },
+      { namePrefix: "HCT" },
+      { namePrefix: "DTW" },
     ],
   };
 
